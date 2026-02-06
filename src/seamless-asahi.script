@@ -1,0 +1,157 @@
+// journactl apple-dcp reports notch height of 74 pixels for MBP M2 14"
+notch = 74;
+
+screen.w = Window.GetWidth();
+screen.h = Window.GetHeight();
+
+logo;
+
+pgframe;
+pgfill;
+pgblack;
+pgbg;
+
+message;
+answer;
+
+pwparts;
+pwstart = Image("pwstart.png");
+pwend = Image("pwend.png");
+pwempty = Image("pwempty.png");
+pwbullet = Image("pwbullet.png");
+
+fun ShowLogo() {
+    logo.image = Image("logo.png");
+    logo.image = logo.image.Scale(256, 256);
+    logo.sprite = Sprite(logo.image);
+    logo.sprite.SetPosition(
+        (screen.w - logo.image.GetWidth()) / 2,
+        (screen.h - notch - logo.image.GetHeight()) / 2,
+        100
+    );
+}
+
+fun SetupProgress() {
+    // The progressbar is built in layers. The progress is represented by the
+    // fill, which is moved in from the left. The layers are back to front:
+    // - Background: Main body color of the bar
+    // - Fill:       Fill color of the progress indication
+    // - Black:      To cover the fill outside the bar
+    // - Frame:      The outline of the bar
+
+    pgframe.image = Image("pgframe.png");
+    pgframe.sprite = Sprite(pgframe.image);
+    pgframe.x = (screen.w - pgframe.image.GetWidth()) / 2;
+    pgframe.y = 0.9 * screen.h - pgframe.image.GetHeight() / 2;
+    pgframe.sprite.SetPosition(pgframe.x, pgframe.y, 103);
+
+    pgblack.image = Image("pgblack.png");
+    pgblack.sprite = Sprite(pgblack.image);
+    pgblack.sprite.SetPosition(pgframe.x - pgframe.image.GetWidth(), pgframe.y, 102);
+
+    pgfill.image = Image("pgfill.png");
+    pgfill.sprite = Sprite(pgfill.image);
+    pgfill.sprite.SetPosition(pgframe.x, pgframe.y, 101);
+
+    pgbg.image = Image("pgbg.png");
+    pgbg.sprite = Sprite(pgbg.image);
+    pgbg.sprite.SetPosition(pgframe.x, pgframe.y, 100);
+}
+
+fun UpdateProgress(elapsed, progress) {
+    pgfill.sprite.SetX(pgframe.x - (pgframe.image.GetWidth() * (1 - progress)));
+}
+
+fun ShowMessage(text) {
+    message.text = Image.Text(text, 1, 1, 1, "center", "Sans 24");
+    message.sprite = Sprite(message.text);
+    message.sprite.SetPosition(
+        (screen.w - message.text.GetWidth()) / 2,
+        pgframe.y * 0.95,
+        105
+    );
+}
+
+fun SetProgressBarOpacity(opacity) {
+    pgframe.sprite.SetOpacity(opacity);
+    pgfill.sprite.SetOpacity(opacity);
+    pgblack.sprite.SetOpacity(opacity);
+    pgbg.sprite.SetOpacity(opacity);
+}
+
+fun ShowPassword(prompt, bulletcount) {
+    SetProgressBarOpacity(0);
+    ShowMessage(prompt);
+    pwparts = null;
+    tilecount = Math.Max(bulletcount, 12) + 2;
+    
+    left = (screen.w - tilecount * pwstart.GetWidth()) / 2;
+    y = 0.9 * screen.h - pwstart.GetHeight() / 2;
+
+    for (i = 0; i < tilecount; i++) {
+        x = left + i * pwstart.GetWidth();
+        
+        if (i == 0) {
+            pwparts[i].image = pwstart;
+            pwparts[i].sprite = Sprite(pwparts[i].image);
+        } else if (i == tilecount - 1) {
+            pwparts[i].sprite = Sprite(pwend);
+        } else if (i - 1 < bulletcount) {
+            pwparts[i].sprite = Sprite(pwbullet);
+        } else {
+            pwparts[i].sprite = Sprite(pwempty);
+        }
+
+        pwparts[i].sprite.SetPosition(x, y, 100);
+    }
+}
+
+fun ShowQuestion(prompt, entry) {
+    SetProgressBarOpacity(0);
+    ShowMessage(prompt);
+
+    answer.image = Image.Text(entry, 1, 1, 1, "left", "Sans 24");
+    answer.sprite = Sprite(answer.image);
+
+    tilecount = Math.Max(Math.Int(answer.image.GetWidth() / pwstart.GetWidth()) + 1, 12) + 2;
+
+    left = (screen.w - tilecount * pwstart.GetWidth()) / 2;
+    y = 0.9 * screen.h - pwstart.GetHeight() / 2;
+
+    for (i = 0; i < tilecount; i++) {
+        x = left + i * pwstart.GetWidth();
+        
+        if (i == 0) {
+            pwparts[i].image = pwstart;
+            pwparts[i].sprite = Sprite(pwparts[i].image);
+        } else if (i == tilecount - 1) {
+            pwparts[i].sprite = Sprite(pwend);
+        } else if (i == 1) {
+            answer.sprite.SetPosition(x, y + (pwstart.GetHeight() - answer.image.GetHeight()) / 2, 101);
+            pwparts[i].sprite = Sprite(pwempty);
+        } else {
+            pwparts[i].sprite = Sprite(pwempty);
+        }
+
+        pwparts[i].sprite.SetPosition(x, y, 100);
+    }
+
+}
+
+fun ShowNormal() {
+    SetProgressBarOpacity(1);
+    message = null;
+    answer = null;
+    pwparts = null;
+}
+
+
+Window.SetBackgroundTopColor(0.0, 0.0, 0.0);
+Window.SetBackgroundBottomColour(0.0, 0.0, 0.0);
+ShowLogo();
+SetupProgress();
+Plymouth.SetBootProgressFunction(UpdateProgress);
+Plymouth.SetMessageFunction(ShowMessage);
+Plymouth.SetDisplayPasswordFunction(ShowPassword);
+Plymouth.SetDisplayQuestionFunction(ShowQuestion);
+Plymouth.SetDisplayNormalFunction(ShowNormal);

@@ -1,0 +1,9 @@
+[Plymouth Theme]
+Name=seamless-asahi
+Description=A seamless plymouth theme for Asahi
+Comment=(C) 2026 Luca Schlecker
+ModuleName=script
+
+[script]
+ImageDir=@TARGET_DIR@
+ScriptFile=@TARGET_DIR@/seamless-asahi.script
