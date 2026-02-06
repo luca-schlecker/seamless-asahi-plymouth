@@ -37,6 +37,7 @@
 
           devShells.default = pkgs.mkShell {
             packages = with pkgs; [
+              just
               plymouth
               (pkgs.writeShellScriptBin "plymouth-preview" ''
                 if [ ! "$( id -u )" -eq 0 ]; then
